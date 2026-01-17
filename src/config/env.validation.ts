@@ -34,6 +34,8 @@ export const EnvSchema = z.object({
   DATABASE_URL: z
     .string()
     .refine(isValidUrl, { message: 'DATABASE_URL tidak valid' }),
+
+  SECRET: z.string().min(32),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
