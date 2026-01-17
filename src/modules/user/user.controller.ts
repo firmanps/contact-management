@@ -8,14 +8,16 @@ import {
   Param,
   Patch,
   Post,
+  Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { WebResponse } from 'src/common/response/web-response.interface';
 import { ZodValidationPipe } from 'src/common/zod/validation.pipe';
 import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserResponse } from './dto/user.response';
-import { UserService } from './user.service';
 import { LoginUserDto, LoginUserSchema } from './dto/login-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { RegisterResponse } from './dto/user-response';
+import { UserService } from './user.service';
 
 @Controller('/users')
 export class UserController {
@@ -25,19 +27,27 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   async register(
     @Body(new ZodValidationPipe(CreateUserSchema)) dto: CreateUserDto,
-  ): Promise<WebResponse<UserResponse>> {
+  ): Promise<WebResponse<RegisterResponse>> {
     const user = await this.userService.register(dto);
     return {
-      data: UserResponse.fromEntity(user),
+      data: RegisterResponse.fromEntity(user),
       message: 'Register success',
     };
   }
 
-  @Get('/login')
+  @Post('/login')
+  @HttpCode(HttpStatus.OK)
   async login(
     @Body(new ZodValidationPipe(LoginUserSchema)) dto: LoginUserDto,
-  ): Promise<WebResponse<CreateUserDto>> {
-    await this.userService.login(dto);
+    @Req() req: Request,
+  ): Promise<WebResponse<void>> {
+    const user = await this.userService.login(dto);
+
+    await new Promise<void>((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
+
+    req.session.userId = user.id;
 
     return {
       message: 'Login berhasil',

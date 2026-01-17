@@ -1,10 +1,10 @@
 import {
-  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -51,16 +51,24 @@ export class UserService {
   async login(dto: LoginUserDto) {
     const user = await this.prisma.user.findUnique({
       where: { username: dto.username },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        password: true,
+      },
     });
 
     if (!user) {
-      throw new BadRequestException('Username or password is invalid');
+      throw new UnauthorizedException('Username or password is invalid');
     }
 
     const match = await bcrypt.compare(dto.password, user.password);
     if (!match) {
-      throw new BadRequestException('Username or password is invalid');
+      throw new UnauthorizedException('Username or password is invalid');
     }
+
+    return { id: user.id, username: user.username, name: user.name };
   }
 
   findOne(id: number) {
