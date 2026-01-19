@@ -1,20 +1,20 @@
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import * as session from 'express-session';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { AppModule } from './app.module';
-import { HttpLoggingInterceptor } from './common/logger/http-logging.interceptor';
-import { WinstonLogger } from './common/logger/winston.logger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const port = configService.getOrThrow<number>('app.port');
-  const origin = configService.getOrThrow<string[]>('cors.origins');
-  const secret = configService.getOrThrow<string>('app.secret');
+  const origin = configService.getOrThrow<string[]>('app.corsOrigins');
+  const secret = configService.getOrThrow<string[]>('app.secret');
 
-  const logger = app.get(WinstonLogger);
-  app.useLogger(logger);
-  app.useGlobalInterceptors(new HttpLoggingInterceptor(logger));
+    //logger
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   app.enableCors({
     origin,
@@ -33,6 +33,14 @@ async function bootstrap() {
       },
     }),
   );
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true
+    })
+  )
 
   app.setGlobalPrefix('/api');
 

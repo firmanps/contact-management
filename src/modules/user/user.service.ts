@@ -3,21 +3,21 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  Logger,
-  UnauthorizedException,
+  LoggerService,
+  UnauthorizedException
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { WinstonLogger } from 'src/common/logger/winston.logger';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { PrismaService } from 'src/common/prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from './dto/request/create-user.dto';
+import { LoginUserDto } from './dto/request/login-user.dto';
+import { UpdateUserDto } from './dto/request/update-user.dto';
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
-    @Inject(WinstonLogger) private logger: Logger,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER) private logger: LoggerService,
   ) {}
 
   async register(dto: CreateUserDto) {
